@@ -1,5 +1,6 @@
 var Main = (function () {
     function Main(canvasElement) {
+        this.k = 0;
         Main.Canvas = document.getElementById(canvasElement);
         Main.Engine = new BABYLON.Engine(Main.Canvas, true);
     }
@@ -8,9 +9,13 @@ var Main = (function () {
         Main.Camera = new BABYLON.ArcRotateCamera("ArcCamera", 0, 0, 1, BABYLON.Vector3.Zero(), Main.Scene);
         Main.Camera.setPosition(new BABYLON.Vector3(256, 256, 256));
         Main.Camera.attachControl(Main.Canvas);
+        Main.Camera.wheelPrecision = 5;
         Main.Light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), Main.Scene);
         Main.Light.diffuse = new BABYLON.Color3(1, 1, 1);
+        Main.Light.groundColor = new BABYLON.Color3(0.5, 0.5, 0.5);
         Main.Light.specular = new BABYLON.Color3(1, 1, 1);
+        Main.ShadowLight = new BABYLON.DirectionalLight("ShadowLight", new BABYLON.Vector3(0.2, -1, 0.2), Main.Scene);
+        Main.ShadowLight.position = new BABYLON.Vector3(5, 10, 5);
     };
     Main.prototype.Animate = function () {
         Main.Engine.runRenderLoop(function () {
@@ -157,6 +162,43 @@ var Main = (function () {
             console.warn("Argument is not a mesh. Aborting");
         }
     };
+    Main.prototype.LoadDemoScene = function () {
+        var _this = this;
+        var t0 = new Date();
+        BABYLON.SceneLoader.ImportMesh("", "./datas/demoScene.babylon", "", Main.Scene, function (meshes, particles, skeletons) {
+            console.log("Demo Scene Successfuly loaded.");
+            var t1 = new Date();
+            $("#loading-time").text((t1.getTime() - t0.getTime()).toString());
+            Main.Camera.setPosition(new BABYLON.Vector3(5, 5, 5));
+            var shadowMaker = new BABYLON.ShadowGenerator(1024, Main.ShadowLight);
+            shadowMaker.usePoissonSampling = true;
+            var _loop_1 = function (i) {
+                meshes[i].renderOutline = true;
+                meshes[i].outlineColor = BABYLON.Color3.Black();
+                meshes[i].outlineWidth = 0.01;
+                if (meshes[i].name.indexOf("Ball") !== -1) {
+                    shadowMaker.getShadowMap().renderList.push(meshes[i]);
+                    Main.Scene.registerBeforeRender(function () {
+                        meshes[i].rotation.y += 0.01;
+                    });
+                }
+                if (meshes[i].name.indexOf("LargeCube") !== -1) {
+                    shadowMaker.getShadowMap().renderList.push(meshes[i]);
+                    Main.Scene.registerBeforeRender(function () {
+                        meshes[i].rotation.y -= 0.01;
+                        meshes[i].position.y = Math.cos(_this.k / 50) + 1;
+                        _this.k++;
+                    });
+                }
+                if (meshes[i].name.indexOf("Base") !== -1) {
+                    meshes[i].receiveShadows = true;
+                }
+            };
+            for (var i = 0; i < meshes.length; i++) {
+                _loop_1(i);
+            }
+        });
+    };
     return Main;
 }());
 Main.Sliding = false;
@@ -174,5 +216,9 @@ window.addEventListener("DOMContentLoaded", function () {
     if ($("#png-height-map").get(0)) {
         console.log("Load Terrain from PNG HeightMap");
         game.LoadTerrainFromPNGHeightMap();
+    }
+    if ($("#demo-scene").get(0)) {
+        console.log("Load Terrain from PNG HeightMap");
+        game.LoadDemoScene();
     }
 });

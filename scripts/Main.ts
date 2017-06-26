@@ -8,6 +8,7 @@ class Main {
   public static Scene: BABYLON.Scene;
   public static Camera: BABYLON.ArcRotateCamera;
   public static Light: BABYLON.HemisphericLight;
+  public static ShadowLight: BABYLON.DirectionalLight;
 
   public static Sliding: boolean = false;
   public static LockedMouse: boolean = false;
@@ -25,10 +26,15 @@ class Main {
     Main.Camera = new BABYLON.ArcRotateCamera("ArcCamera", 0, 0, 1, BABYLON.Vector3.Zero(), Main.Scene);
     Main.Camera.setPosition(new BABYLON.Vector3(256, 256, 256));
     Main.Camera.attachControl(Main.Canvas);
+    Main.Camera.wheelPrecision = 5;
 
     Main.Light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), Main.Scene);
     Main.Light.diffuse = new BABYLON.Color3(1, 1, 1);
+    Main.Light.groundColor = new BABYLON.Color3(0.5, 0.5, 0.5);
     Main.Light.specular = new BABYLON.Color3(1, 1, 1);
+
+    Main.ShadowLight = new BABYLON.DirectionalLight("ShadowLight", new BABYLON.Vector3(0.2, -1, 0.2), Main.Scene);
+    Main.ShadowLight.position = new BABYLON.Vector3(5, 10, 5);
   }
 
   public Animate(): void {
@@ -194,6 +200,51 @@ class Main {
       console.warn("Argument is not a mesh. Aborting");
     }
   }
+
+  private k: number = 0;
+  public LoadDemoScene(): void {
+    let t0: Date = new Date();
+    BABYLON.SceneLoader.ImportMesh(
+      "",
+      "./datas/demoScene.babylon",
+      "",
+      Main.Scene,
+      (
+        meshes: Array<BABYLON.AbstractMesh>,
+        particles: Array<BABYLON.ParticleSystem>,
+        skeletons: Array<BABYLON.Skeleton>
+      ) => {
+        console.log("Demo Scene Successfuly loaded.");
+        let t1: Date = new Date();
+        $("#loading-time").text((t1.getTime() - t0.getTime()).toString());
+        Main.Camera.setPosition(new BABYLON.Vector3(5, 5, 5));
+        let shadowMaker: BABYLON.ShadowGenerator = new BABYLON.ShadowGenerator(1024, Main.ShadowLight);
+        shadowMaker.usePoissonSampling = true;
+        for (let i: number = 0; i < meshes.length; i++) {
+          meshes[i].renderOutline = true;
+          meshes[i].outlineColor = BABYLON.Color3.Black();
+          meshes[i].outlineWidth = 0.01;
+          if (meshes[i].name.indexOf("Ball") !== -1) {
+            shadowMaker.getShadowMap().renderList.push(meshes[i]);
+            Main.Scene.registerBeforeRender(() => {
+              meshes[i].rotation.y += 0.01;
+            });
+          }
+          if (meshes[i].name.indexOf("LargeCube") !== -1) {
+            shadowMaker.getShadowMap().renderList.push(meshes[i]);
+            Main.Scene.registerBeforeRender(() => {
+              meshes[i].rotation.y -= 0.01;
+              meshes[i].position.y = Math.cos(this.k / 50) + 1;
+              this.k++;
+            });
+          }
+          if (meshes[i].name.indexOf("Base") !== -1) {
+            meshes[i].receiveShadows = true;
+          }
+        }
+      }
+    );
+  }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -207,5 +258,9 @@ window.addEventListener("DOMContentLoaded", () => {
   if ($("#png-height-map").get(0)) {
     console.log("Load Terrain from PNG HeightMap");
     game.LoadTerrainFromPNGHeightMap();
+  }
+  if ($("#demo-scene").get(0)) {
+    console.log("Load Terrain from PNG HeightMap");
+    game.LoadDemoScene();
   }
 });
