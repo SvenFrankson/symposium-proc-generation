@@ -33,8 +33,10 @@ class Main {
     Main.Light.groundColor = new BABYLON.Color3(0.5, 0.5, 0.5);
     Main.Light.specular = new BABYLON.Color3(1, 1, 1);
 
+    /*
     Main.ShadowLight = new BABYLON.DirectionalLight("ShadowLight", new BABYLON.Vector3(0.2, -1, 0.2), Main.Scene);
     Main.ShadowLight.position = new BABYLON.Vector3(5, 10, 5);
+    */
   }
 
   public Animate(): void {
@@ -78,9 +80,10 @@ class Main {
       let vertexData: BABYLON.VertexData = new BABYLON.VertexData();
       let positions: Array<number> = [];
       let indices: Array<number> = [];
+      let pixels: Uint8ClampedArray = ctx.getImageData(0, 0, 129, 129).data;
       for (let i: number = 0; i < 129; i++) {
         for (let j: number = 0; j < 129; j++) {
-          let pixel: number = ctx.getImageData(i, j, 1, 1).data[0];
+          let pixel: number = pixels[(i + j * 129) * 4];
           positions.push(i - 128);
           positions.push(pixel / 256 * 100);
           positions.push(j - 128);
@@ -99,14 +102,16 @@ class Main {
       vertexData.normals = [];
       BABYLON.VertexData.ComputeNormals(positions, indices, vertexData.normals);
       vertexData.applyToMesh(mesh);
+      let t1: Date = new Date();
 
       mesh = new BABYLON.Mesh("Terrain10", Main.Scene);
       vertexData = new BABYLON.VertexData();
       positions = [];
       indices = [];
+      pixels = ctx.getImageData(128, 0, 129, 129).data;
       for (let i: number = 0; i < 129; i++) {
         for (let j: number = 0; j < 129; j++) {
-          let pixel: number = ctx.getImageData(i + 128, j, 1, 1).data[0];
+          let pixel: number = pixels[(i + j * 129) * 4];
           positions.push(i);
           positions.push(pixel / 256 * 100);
           positions.push(j - 128);
@@ -130,9 +135,10 @@ class Main {
       vertexData = new BABYLON.VertexData();
       positions = [];
       indices = [];
+      pixels = ctx.getImageData(128, 128, 129, 129).data;
       for (let i: number = 0; i < 129; i++) {
         for (let j: number = 0; j < 129; j++) {
-          let pixel: number = ctx.getImageData(i + 128, j + 128, 1, 1).data[0];
+          let pixel: number = pixels[(i + j * 129) * 4];
           positions.push(i);
           positions.push(pixel / 256 * 100);
           positions.push(j);
@@ -156,9 +162,10 @@ class Main {
       vertexData = new BABYLON.VertexData();
       positions = [];
       indices = [];
+      pixels = ctx.getImageData(0, 128, 129, 129).data;
       for (let i: number = 0; i < 129; i++) {
         for (let j: number = 0; j < 129; j++) {
-          let pixel: number = ctx.getImageData(i, j + 128, 1, 1).data[0];
+          let pixel: number = pixels[(i + j * 129) * 4];
           positions.push(i - 128);
           positions.push(pixel / 256 * 100);
           positions.push(j);
@@ -177,8 +184,7 @@ class Main {
       vertexData.normals = [];
       BABYLON.VertexData.ComputeNormals(positions, indices, vertexData.normals);
       vertexData.applyToMesh(mesh);
-
-      let t1: Date = new Date();
+      t1 = new Date();
       $("#loading-time").text((t1.getTime() - t0.getTime()).toString());
     };
   }

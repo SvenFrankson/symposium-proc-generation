@@ -14,8 +14,6 @@ var Main = (function () {
         Main.Light.diffuse = new BABYLON.Color3(1, 1, 1);
         Main.Light.groundColor = new BABYLON.Color3(0.5, 0.5, 0.5);
         Main.Light.specular = new BABYLON.Color3(1, 1, 1);
-        Main.ShadowLight = new BABYLON.DirectionalLight("ShadowLight", new BABYLON.Vector3(0.2, -1, 0.2), Main.Scene);
-        Main.ShadowLight.position = new BABYLON.Vector3(5, 10, 5);
     };
     Main.prototype.Animate = function () {
         Main.Engine.runRenderLoop(function () {
@@ -44,9 +42,10 @@ var Main = (function () {
             var vertexData = new BABYLON.VertexData();
             var positions = [];
             var indices = [];
+            var pixels = ctx.getImageData(0, 0, 129, 129).data;
             for (var i = 0; i < 129; i++) {
                 for (var j = 0; j < 129; j++) {
-                    var pixel = ctx.getImageData(i, j, 1, 1).data[0];
+                    var pixel = pixels[(i + j * 129) * 4];
                     positions.push(i - 128);
                     positions.push(pixel / 256 * 100);
                     positions.push(j - 128);
@@ -65,13 +64,15 @@ var Main = (function () {
             vertexData.normals = [];
             BABYLON.VertexData.ComputeNormals(positions, indices, vertexData.normals);
             vertexData.applyToMesh(mesh);
+            var t1 = new Date();
             mesh = new BABYLON.Mesh("Terrain10", Main.Scene);
             vertexData = new BABYLON.VertexData();
             positions = [];
             indices = [];
+            pixels = ctx.getImageData(128, 0, 129, 129).data;
             for (var i = 0; i < 129; i++) {
                 for (var j = 0; j < 129; j++) {
-                    var pixel = ctx.getImageData(i + 128, j, 1, 1).data[0];
+                    var pixel = pixels[(i + j * 129) * 4];
                     positions.push(i);
                     positions.push(pixel / 256 * 100);
                     positions.push(j - 128);
@@ -94,9 +95,10 @@ var Main = (function () {
             vertexData = new BABYLON.VertexData();
             positions = [];
             indices = [];
+            pixels = ctx.getImageData(128, 128, 129, 129).data;
             for (var i = 0; i < 129; i++) {
                 for (var j = 0; j < 129; j++) {
-                    var pixel = ctx.getImageData(i + 128, j + 128, 1, 1).data[0];
+                    var pixel = pixels[(i + j * 129) * 4];
                     positions.push(i);
                     positions.push(pixel / 256 * 100);
                     positions.push(j);
@@ -119,9 +121,10 @@ var Main = (function () {
             vertexData = new BABYLON.VertexData();
             positions = [];
             indices = [];
+            pixels = ctx.getImageData(0, 128, 129, 129).data;
             for (var i = 0; i < 129; i++) {
                 for (var j = 0; j < 129; j++) {
-                    var pixel = ctx.getImageData(i, j + 128, 1, 1).data[0];
+                    var pixel = pixels[(i + j * 129) * 4];
                     positions.push(i - 128);
                     positions.push(pixel / 256 * 100);
                     positions.push(j);
@@ -140,7 +143,7 @@ var Main = (function () {
             vertexData.normals = [];
             BABYLON.VertexData.ComputeNormals(positions, indices, vertexData.normals);
             vertexData.applyToMesh(mesh);
-            var t1 = new Date();
+            t1 = new Date();
             $("#loading-time").text((t1.getTime() - t0.getTime()).toString());
         };
     };
